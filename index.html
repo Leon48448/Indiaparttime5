@@ -1039,6 +1039,64 @@
       display: block;
     }
 
+    /* ----- new dropdown button styles (added) ----- */
+    .dropdown-btn-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 200px;
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 8px 0;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(6px) scale(0.97);
+      transition: opacity 0.25s var(--ease-out), transform 0.25s var(--ease-out), visibility 0.25s;
+      z-index: 200;
+      pointer-events: none;
+    }
+    .dropdown-menu.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+    .dropdown-menu a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: background 0.2s, color 0.2s;
+      border-left: 2px solid transparent;
+    }
+    .dropdown-menu a i {
+      width: 20px;
+      color: var(--accent-gold);
+      font-size: 1rem;
+    }
+    .dropdown-menu a:hover {
+      background: rgba(245, 179, 66, 0.06);
+      color: #fff;
+      border-left-color: var(--accent-gold);
+    }
+    .dropdown-menu a:first-child {
+      border-radius: 18px 18px 0 0;
+    }
+    .dropdown-menu a:last-child {
+      border-radius: 0 0 18px 18px;
+    }
+
     @media (max-width: 800px) {
       .hero-grid {
         grid-template-columns: 1fr;
@@ -1105,10 +1163,23 @@
         <div class="cta-group">
           <a href="#" class="btn-primary"><i class="fas fa-arrow-right" aria-hidden="true"></i> Start campaign</a>
           <a href="#" class="btn-secondary">Learn more</a>
+          <!-- NEW: single button with dropdown containing 5 links -->
+          <div class="dropdown-btn-wrapper">
+            <button class="btn-primary" id="resourceDropdownBtn" aria-haspopup="true" aria-expanded="false">
+              <i class="fas fa-link" aria-hidden="true"></i> Resource Links
+            </button>
+            <div class="dropdown-menu" id="resourceDropdownMenu" role="menu">
+              <a href="https://www.google.com" target="_blank" rel="noopener noreferrer" role="menuitem"><i class="fab fa-google" aria-hidden="true"></i> Google</a>
+              <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" role="menuitem"><i class="fab fa-youtube" aria-hidden="true"></i> YouTube</a>
+              <a href="https://www.wikipedia.org" target="_blank" rel="noopener noreferrer" role="menuitem"><i class="fas fa-globe" aria-hidden="true"></i> Wikipedia</a>
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" role="menuitem"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a>
+              <a href="https://stackoverflow.com" target="_blank" rel="noopener noreferrer" role="menuitem"><i class="fab fa-stack-overflow" aria-hidden="true"></i> Stack Overflow</a>
+            </div>
+          </div>
         </div>
       </div>
       <!-- Hero images added -->
-     
+
     </div>
   </header>
 
@@ -1403,6 +1474,59 @@
         setTimeout(() => ripple.remove(), 650);
       });
     });
+
+    // ===== NEW: dropdown toggle for resource links =====
+    const dropdownBtn = document.getElementById('resourceDropdownBtn');
+    const dropdownMenu = document.getElementById('resourceDropdownMenu');
+
+    if (dropdownBtn && dropdownMenu) {
+      // toggle on button click
+      dropdownBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const isOpen = dropdownMenu.classList.toggle('open');
+        dropdownBtn.setAttribute('aria-expanded', isOpen);
+      });
+
+      // close on outside click
+      document.addEventListener('click', function(e) {
+        const wrapper = dropdownBtn.closest('.dropdown-btn-wrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+          dropdownMenu.classList.remove('open');
+          dropdownBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      // close on Escape
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && dropdownMenu.classList.contains('open')) {
+          dropdownMenu.classList.remove('open');
+          dropdownBtn.setAttribute('aria-expanded', 'false');
+          dropdownBtn.focus();
+        }
+      });
+
+      // keyboard navigation for menu items
+      const menuItems = dropdownMenu.querySelectorAll('a[role="menuitem"]');
+      menuItems.forEach((item, index) => {
+        item.addEventListener('keydown', function(e) {
+          if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            const next = menuItems[index + 1] || menuItems[0];
+            next.focus();
+          } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+            e.preventDefault();
+            const prev = menuItems[index - 1] || menuItems[menuItems.length - 1];
+            prev.focus();
+          } else if (e.key === 'Home') {
+            e.preventDefault();
+            menuItems[0].focus();
+          } else if (e.key === 'End') {
+            e.preventDefault();
+            menuItems[menuItems.length - 1].focus();
+          }
+        });
+      });
+    }
   </script>
 </body>
 </html>
