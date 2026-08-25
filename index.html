@@ -1163,17 +1163,13 @@
         <div class="cta-group">
           <a href="#" class="btn-primary"><i class="fas fa-arrow-right" aria-hidden="true"></i> Start campaign</a>
           <a href="#" class="btn-secondary">Learn more</a>
-          <!-- NEW: single button with dropdown containing 5 links -->
+          <!-- NEW: single button with dropdown containing 5 links, random on reload -->
           <div class="dropdown-btn-wrapper">
             <button class="btn-primary" id="resourceDropdownBtn" aria-haspopup="true" aria-expanded="false">
-              <i class="fas fa-link" aria-hidden="true"></i> Resource Links
+              <i class="fas fa-link" aria-hidden="true"></i> <span id="randomLinkLabel">Resource Links</span>
             </button>
             <div class="dropdown-menu" id="resourceDropdownMenu" role="menu">
-              <a href="https://www.google.com" target="_blank" rel="noopener noreferrer" role="menuitem"><i class="fab fa-google" aria-hidden="true"></i> Google</a>
-              <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" role="menuitem"><i class="fab fa-youtube" aria-hidden="true"></i> YouTube</a>
-              <a href="https://www.wikipedia.org" target="_blank" rel="noopener noreferrer" role="menuitem"><i class="fas fa-globe" aria-hidden="true"></i> Wikipedia</a>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" role="menuitem"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a>
-              <a href="https://stackoverflow.com" target="_blank" rel="noopener noreferrer" role="menuitem"><i class="fab fa-stack-overflow" aria-hidden="true"></i> Stack Overflow</a>
+              <!-- links will be populated by JS -->
             </div>
           </div>
         </div>
@@ -1475,58 +1471,94 @@
       });
     });
 
-    // ===== NEW: dropdown toggle for resource links =====
-    const dropdownBtn = document.getElementById('resourceDropdownBtn');
-    const dropdownMenu = document.getElementById('resourceDropdownMenu');
+    // ===== NEW: dropdown with random link on reload =====
+    (function initRandomLink() {
+      const linkData = [
+        { name: 'Google', url: 'https://www.google.com', icon: 'fab fa-google' },
+        { name: 'YouTube', url: 'https://www.youtube.com', icon: 'fab fa-youtube' },
+        { name: 'Wikipedia', url: 'https://www.wikipedia.org', icon: 'fas fa-globe' },
+        { name: 'GitHub', url: 'https://github.com', icon: 'fab fa-github' },
+        { name: 'Stack Overflow', url: 'https://stackoverflow.com', icon: 'fab fa-stack-overflow' }
+      ];
 
-    if (dropdownBtn && dropdownMenu) {
-      // toggle on button click
-      dropdownBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const isOpen = dropdownMenu.classList.toggle('open');
-        dropdownBtn.setAttribute('aria-expanded', isOpen);
-      });
+      // pick random
+      const randomIndex = Math.floor(Math.random() * linkData.length);
+      const chosen = linkData[randomIndex];
 
-      // close on outside click
-      document.addEventListener('click', function(e) {
-        const wrapper = dropdownBtn.closest('.dropdown-btn-wrapper');
-        if (wrapper && !wrapper.contains(e.target)) {
-          dropdownMenu.classList.remove('open');
-          dropdownBtn.setAttribute('aria-expanded', 'false');
-        }
-      });
+      // update button label
+      const labelSpan = document.getElementById('randomLinkLabel');
+      if (labelSpan) {
+        labelSpan.textContent = chosen.name;
+      }
 
-      // close on Escape
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && dropdownMenu.classList.contains('open')) {
-          dropdownMenu.classList.remove('open');
-          dropdownBtn.setAttribute('aria-expanded', 'false');
-          dropdownBtn.focus();
-        }
-      });
+      // populate dropdown menu with all 5 links (full list)
+      const menu = document.getElementById('resourceDropdownMenu');
+      if (menu) {
+        menu.innerHTML = '';
+        linkData.forEach(link => {
+          const a = document.createElement('a');
+          a.href = link.url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.role = 'menuitem';
+          a.innerHTML = `<i class="${link.icon}" aria-hidden="true"></i> ${link.name}`;
+          menu.appendChild(a);
+        });
+      }
 
-      // keyboard navigation for menu items
-      const menuItems = dropdownMenu.querySelectorAll('a[role="menuitem"]');
-      menuItems.forEach((item, index) => {
-        item.addEventListener('keydown', function(e) {
-          if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-            e.preventDefault();
-            const next = menuItems[index + 1] || menuItems[0];
-            next.focus();
-          } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-            e.preventDefault();
-            const prev = menuItems[index - 1] || menuItems[menuItems.length - 1];
-            prev.focus();
-          } else if (e.key === 'Home') {
-            e.preventDefault();
-            menuItems[0].focus();
-          } else if (e.key === 'End') {
-            e.preventDefault();
-            menuItems[menuItems.length - 1].focus();
+      // toggle logic (keep existing)
+      const dropdownBtn = document.getElementById('resourceDropdownBtn');
+      const dropdownMenu = document.getElementById('resourceDropdownMenu');
+
+      if (dropdownBtn && dropdownMenu) {
+        // toggle on button click
+        dropdownBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const isOpen = dropdownMenu.classList.toggle('open');
+          dropdownBtn.setAttribute('aria-expanded', isOpen);
+        });
+
+        // close on outside click
+        document.addEventListener('click', function(e) {
+          const wrapper = dropdownBtn.closest('.dropdown-btn-wrapper');
+          if (wrapper && !wrapper.contains(e.target)) {
+            dropdownMenu.classList.remove('open');
+            dropdownBtn.setAttribute('aria-expanded', 'false');
           }
         });
-      });
-    }
+
+        // close on Escape
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && dropdownMenu.classList.contains('open')) {
+            dropdownMenu.classList.remove('open');
+            dropdownBtn.setAttribute('aria-expanded', 'false');
+            dropdownBtn.focus();
+          }
+        });
+
+        // keyboard navigation for menu items
+        const menuItems = dropdownMenu.querySelectorAll('a[role="menuitem"]');
+        menuItems.forEach((item, index) => {
+          item.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+              e.preventDefault();
+              const next = menuItems[index + 1] || menuItems[0];
+              next.focus();
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+              e.preventDefault();
+              const prev = menuItems[index - 1] || menuItems[menuItems.length - 1];
+              prev.focus();
+            } else if (e.key === 'Home') {
+              e.preventDefault();
+              menuItems[0].focus();
+            } else if (e.key === 'End') {
+              e.preventDefault();
+              menuItems[menuItems.length - 1].focus();
+            }
+          });
+        });
+      }
+    })();
   </script>
 </body>
 </html>
