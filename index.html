@@ -1258,11 +1258,13 @@
         <div class="cta-group">
           <a href="#" class="btn-primary"><i class="fas fa-arrow-right" aria-hidden="true"></i> Start campaign</a>
           <a href="#" class="btn-secondary">Learn more</a>
+          <!-- NEW: single button with dropdown – 5 links, reshuffle on each click -->
           <div class="dropdown-btn-wrapper">
             <button class="btn-primary" id="resourceDropdownBtn" aria-haspopup="true" aria-expanded="false">
               <i class="fas fa-link" aria-hidden="true"></i> <span id="randomLinkLabel">Resource Links</span>
             </button>
             <div class="dropdown-menu" id="resourceDropdownMenu" role="menu">
+              <!-- links populated by JS, reshuffled each click -->
             </div>
           </div>
         </div>
@@ -1565,9 +1567,9 @@
       });
     });
 
-    // ===== dropdown random link (unchanged) =====
+    // ===== improved dropdown: reshuffle 5 links on each click =====
     (function initRandomLink() {
-      const linkData = [
+      const linkPool = [
         { name: 'Google', url: 'https://www.google.com', icon: 'fab fa-google' },
         { name: 'YouTube', url: 'https://www.youtube.com', icon: 'fab fa-youtube' },
         { name: 'Wikipedia', url: 'https://www.wikipedia.org', icon: 'fas fa-globe' },
@@ -1575,38 +1577,55 @@
         { name: 'Stack Overflow', url: 'https://stackoverflow.com', icon: 'fab fa-stack-overflow' }
       ];
 
-      const randomIndex = Math.floor(Math.random() * linkData.length);
-      const chosen = linkData[randomIndex];
-
-      const labelSpan = document.getElementById('randomLinkLabel');
-      if (labelSpan) {
-        labelSpan.textContent = chosen.name;
-      }
-
-      const menu = document.getElementById('resourceDropdownMenu');
-      if (menu) {
-        menu.innerHTML = '';
-        linkData.forEach(link => {
-          const a = document.createElement('a');
-          a.href = link.url;
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-          a.role = 'menuitem';
-          a.innerHTML = `<i class="${link.icon}" aria-hidden="true"></i> ${link.name}`;
-          menu.appendChild(a);
-        });
-      }
-
       const dropdownBtn = document.getElementById('resourceDropdownBtn');
       const dropdownMenu = document.getElementById('resourceDropdownMenu');
+      const labelSpan = document.getElementById('randomLinkLabel');
+
+      // helper: shuffle array (Fisher–Yates)
+      function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      // render menu from a shuffled copy, update label to first item
+      function renderShuffled() {
+        const shuffled = shuffleArray([...linkPool]);
+        // update button label with first link name
+        if (labelSpan) {
+          labelSpan.textContent = shuffled[0].name;
+        }
+        // build menu
+        if (dropdownMenu) {
+          dropdownMenu.innerHTML = '';
+          shuffled.forEach(link => {
+            const a = document.createElement('a');
+            a.href = link.url;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.role = 'menuitem';
+            a.innerHTML = `<i class="${link.icon}" aria-hidden="true"></i> ${link.name}`;
+            dropdownMenu.appendChild(a);
+          });
+        }
+      }
+
+      // initial render
+      renderShuffled();
 
       if (dropdownBtn && dropdownMenu) {
+        // toggle dropdown on button click
         dropdownBtn.addEventListener('click', function(e) {
           e.stopPropagation();
           const isOpen = dropdownMenu.classList.toggle('open');
           dropdownBtn.setAttribute('aria-expanded', isOpen);
+          // reshuffle every time the button is clicked (open or close)
+          renderShuffled();
         });
 
+        // close on outside click
         document.addEventListener('click', function(e) {
           const wrapper = dropdownBtn.closest('.dropdown-btn-wrapper');
           if (wrapper && !wrapper.contains(e.target)) {
@@ -1615,6 +1634,7 @@
           }
         });
 
+        // close on Escape
         document.addEventListener('keydown', function(e) {
           if (e.key === 'Escape' && dropdownMenu.classList.contains('open')) {
             dropdownMenu.classList.remove('open');
@@ -1623,27 +1643,29 @@
           }
         });
 
-        const menuItems = dropdownMenu.querySelectorAll('a[role="menuitem"]');
-        menuItems.forEach((item, index) => {
-          item.addEventListener('keydown', function(e) {
-            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-              e.preventDefault();
-              const next = menuItems[index + 1] || menuItems[0];
-              next.focus();
-            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-              e.preventDefault();
-              const prev = menuItems[index - 1] || menuItems[menuItems.length - 1];
-              prev.focus();
-            } else if (e.key === 'Home') {
-              e.preventDefault();
-              menuItems[0].focus();
-            } else if (e.key === 'End') {
-              e.preventDefault();
-              menuItems[menuItems.length - 1].focus();
-            }
-          });
+        // keyboard navigation for menu items
+        dropdownMenu.addEventListener('keydown', function(e) {
+          const items = this.querySelectorAll('a[role="menuitem"]');
+          const current = document.activeElement;
+          const idx = Array.from(items).indexOf(current);
+          if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            const next = items[idx + 1] || items[0];
+            if (next) next.focus();
+          } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+            e.preventDefault();
+            const prev = items[idx - 1] || items[items.length - 1];
+            if (prev) prev.focus();
+          } else if (e.key === 'Home') {
+            e.preventDefault();
+            if (items[0]) items[0].focus();
+          } else if (e.key === 'End') {
+            e.preventDefault();
+            if (items[items.length - 1]) items[items.length - 1].focus();
+          }
         });
 
+        // touch outside close
         document.addEventListener('touchstart', function(e) {
           const wrapper = dropdownBtn.closest('.dropdown-btn-wrapper');
           if (wrapper && !wrapper.contains(e.target)) {
